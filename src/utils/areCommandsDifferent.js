@@ -25,7 +25,6 @@ module.exports = (existingCommand, localCommand) => {
       if (!existingOption) {
         return true;
       }
-
       if (
         localOption.description !== existingOption.description ||
         localOption.type !== existingOption.type ||

@@ -4,49 +4,57 @@ const getApplicationCommands = require("../../utils/getApplicationCommands");
 const getLocalCommands = require("../../utils/getLocalCommands");
 
 module.exports = async (client) => {
+  let applicationId;
+
   try {
-    const localCommands = getLocalCommands();
     const applicationCommand = await getApplicationCommands(client, testServer);
+    const localCommands = getLocalCommands();
+    
+    for (const application of applicationCommand) {
+      for (const localCommand of localCommands) {
+        const { name, description, options } = localCommand;
+        application.cache.find(async (guild) => {
+          applicationId = guild.guild.name;
+        });
+        
+        const existingCommand = await application.cache.find(
+          (cmd) => cmd.name === name
+        );
 
-    for (const localCommand of localCommands) {
-      const { name, description, options } = localCommand;
+        if (existingCommand) {
+          if (localCommand.deleted) {
+            await application.delete(existingCommand.id);
+            console.log(`${applicationId}/Comando deletado: ${name}`);
+            continue;
+          }
 
-      const existingCommand = await applicationCommand.cache.find(
-        (cmd) => cmd.name === name
-      );
+          if (areCommandsDifferent(existingCommand, localCommand)) {
+            await application.edit(existingCommand.id, {
+              description,
+              options,
+            });
 
-      if(existingCommand){
-        if(localCommand.deleted){
-          await applicationCommand.delete(existingCommand.id);
-          console.log(`Comando deletado: ${name}`)
-          continue;
-        }
+            console.log(`${applicationId}/Comando editado: ${name}`);
+          }
+        } else {
+          if (localCommand.deleted) {
+            console.log(
+              `${applicationId}/Skip > comando registrado setado para deletar: ${name}`
+            );
+            continue;
+          }
 
-        if(areCommandsDifferent(existingCommand, localCommand)){
-          await applicationCommand.edit(existingCommand.id, {
-            description, 
+          await application.create({
+            name,
+            description,
             options,
           });
 
-          console.log(`Comando editado: ${name}`);
+          console.log(`${applicationId}/Comando registrado: ${name}`);
         }
-      } else{
-        if(localCommand.deleted){
-          console.log(`Skip > comando registrado setado para deletar: ${name}`)
-          continue;
-        }
-
-        await applicationCommand.create({
-          name,
-          description,
-          options,
-        })
-
-        console.log(`Comando registrado: ${name}`);
       }
     }
-
   } catch (error) {
-    console.log(`Algo deu errado: ${error}`);
+    console.log(`${applicationId}/Algo deu errado: ${error}`);
   }
 };

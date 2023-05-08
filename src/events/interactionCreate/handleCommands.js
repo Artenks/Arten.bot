@@ -25,7 +25,7 @@ module.exports = async (client, interaction) => {
     if (commandObject.testOnly) {
       if (!interaction.guild.id === testServer) {
         interaction.reply({
-          content: "O comando não pode ser usado nessa sala.",
+          content: "O comando não pode ser acessadp por essa sala.",
           ephemeral: true,
         });
         return;
