@@ -1,7 +1,5 @@
-const getLevel = require("../../utils/getLevel")
-const {
-  ApplicationCommandOptionType
-} = require("discord.js");
+const getLevel = require("../../utils/getLevel");
+const { ApplicationCommandOptionType } = require("discord.js");
 
 module.exports = {
   name: "nivel",

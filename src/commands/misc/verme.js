@@ -16,6 +16,15 @@ module.exports = {
   ],
 
   callback: (client, interaction) => {
-    interaction.reply(`${interaction.options.get('usuario').member} *8VERME** :rat: `)
+
+    if(client.user.username === interaction.options.get("usuario").user.username){
+      interaction.reply(":face_with_monocle: ?")
+      return;
+    }
+    if(interaction.options.get("usuario").user.username === "artenks"){
+      interaction.reply("não.")
+      return;
+    }
+    interaction.reply(`${interaction.options.get('usuario').member} **VERME** :rat: `)
   },
 };

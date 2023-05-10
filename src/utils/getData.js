@@ -9,7 +9,7 @@ module.exports = async (interaction, especifcId) => {
 
   if (especifcId == null) {
     await usersLevel
-      .findOne({ _id: interaction.user.id })
+      ?.findOne({ _id: interaction.user.id })
       .then(async (user) => {
         userId = user?._id;
         username = user?.username;
@@ -31,11 +31,11 @@ module.exports = async (interaction, especifcId) => {
     };
   }
 
-  await usersLevel.findOne({ _id: especifcId }).then(async (user) => {
+  await usersLevel?.findOne({ _id: especifcId }).then(async (user) => {
     userId = user?._id;
     username = user?.username;
     user?.Guild.map(async (guild) => {
-      if (guild._id == interaction.guildId) {
+      if (guild?._id == interaction.guildId) {
         guildId = guild?._id;
         level = guild?.level;
         xp = guild?.xp;

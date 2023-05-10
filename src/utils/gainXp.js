@@ -1,21 +1,25 @@
 //calculo = baseValue * multiplicator * level
 
 const usersLevel = require("../models/usersLevel");
+const guildsInfo = require("../models/guildsInfo");
 const cooldowns = new Set();
 
-let xpPerMessage = 10;
-let multiplicatorPerLevel = 5;
-let baseValueToReach = 5;
+let xpPerMessage = 6;
+// let multiplicatorPerLevel = 5;
+// let baseValueToReach = 5;
+
+function calculateBase(level) {
+  return 5 * (level ^ 2) + 50 * level + 100;
+}
 
 async function updateInfos(arg, author, level, xp) {
   let userExistInGuild;
   let userExist;
   await usersLevel.findOne({ _id: author.id }).then((user) => {
     user?.Guild.map((guild) => {
-      if(user._id == author.id){
+      if (user._id == author.id) {
         userExist = true;
-      }
-      else{
+      } else {
         userExist = false;
       }
       if (guild._id == arg.guildId && user._id == author.id) {
@@ -27,14 +31,13 @@ async function updateInfos(arg, author, level, xp) {
   });
 
   async function writeGuild(pushGuild) {
-
-    if(pushGuild){
+    if (pushGuild) {
       await usersLevel.findOne({ _id: author.id }).then(async (user) => {
         user.Guild.push({
           _id: arg.guildId,
           xp: xp,
           level: level,
-        })
+        });
         user.save();
       });
       return;
@@ -60,22 +63,22 @@ async function updateInfos(arg, author, level, xp) {
     return;
   }
 
-  if(userExist){
+  if (userExist) {
     await usersLevel.findOne({ _id: author.id }).then(async (user) => {
       await writeGuild(true);
     });
     return;
+  } else {
+    await usersLevel.create({
+      _id: author.id,
+      username: author.username,
+      Guild: {
+        _id: arg.guildId,
+        xp: xp,
+        level: level,
+      },
+    });
   }
-  
-  await usersLevel.create({
-    _id: author.id,
-    username: author.username,
-    Guild: {
-      _id: arg.guildId,
-      xp: xp,
-      level: level,
-    },
-  });
 }
 
 async function guildInfo(author, arg) {
@@ -129,18 +132,36 @@ async function xpToGain(client, author, arg) {
     level = user.level;
     xp = user.xp;
   }
-  let valueToReach = baseValueToReach * multiplicatorPerLevel * (level + 1);
+  let valueToReach = calculateBase(level);
   xp += xpPerMessage;
   console.log(`${xp}xp ~ +${xpPerMessage}`);
+
+  const channelToSpeak = await guildsInfo.findOne({ _id: 1 }).then((guilds) => {
+    let temporaly;
+    guilds?.Guilds.map((guild) => {
+      if (guild._id == arg.guildId) {
+        if (guild.enable == false) {
+          return;
+        }
+        temporaly = guild.channelLog;
+      }
+    });
+    return temporaly;
+  });
+
   if (xp >= valueToReach) {
     level++;
     console.log(`${author.username} upou seu level para ${level}`);
-    const rightChannel = client.channels.cache.find(
-      (channel) => channel.id === "1103190105595858975"
-    );
-    rightChannel.send(
-      `<@${author.id}> >> **${level}Lvl ** *~ "${arg.content}*"`
-    );
+
+    if (channelToSpeak != null) {
+      const rightChannel = client.channels.cache.find(
+        (channel) => channel.id === channelToSpeak
+      );
+      rightChannel?.send(
+        // `<@${author.id}> >> **${level}Lvl**`
+        `<${author.username} >> **${level}Lvl**`
+      );
+    }
     xp = xp - valueToReach;
   }
 

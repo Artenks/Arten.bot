@@ -14,81 +14,96 @@ module.exports = async (interaction) => {
 
   const haveAMention = interaction.options.get("usuario") ? true : false;
 
-  const mentionId = await interaction.options.get("usuario")?.member.id;
-  const userId = await interaction.member.id;
+  const mentionId = await interaction.options?.get("usuario")?.member?.id;
+  const userId = await interaction?.member.id;
   const guildUsers = await getGuildUsers(interaction);
 
   setTimeout(async () => {
     if (mentionId == null) {
       await sendRank(userId);
-    } else {
+    } else if (mentionId != null) {
       await sendRank(mentionId);
     }
-    if (haveAMention) {
-      if ((await guildUsers.findIndex((lvl) => lvl._id == mentionId)) == -1) {
-        interaction.reply(`<@${userId}> o usuário não está em meu registro 🐀`);
-        return;
-      }
-    }
-
-    if (mentionId == null && data == null) {
-      interaction.reply(
-        `<@${userId}> o usuário ainda não comentou no servidor. 🐀`
-      );
-      return;
-    }
-
-    if (data != null) {
+    if (data.userId != null) {
       if (userId == mentionId) {
-        interaction.reply({ files: [attachment] });
+        interaction?.reply({ files: [await attachment] });
         return;
       }
       // interaction.reply(`<@${mentionId}> está no **nível ${await data?.id}**`);
-      interaction.reply({ files: [attachment] });
+      interaction?.reply({ files: [await attachment] });
       return;
     }
-  }, 500);
 
-  async function sendRank(id) {
-    console.log(guildUsers);
+    async function sendRank(id) {
+      await guildUsers?.sort((a, b) => {
+        if (a.level === b.level) {
+          return b.xp - a.xp;
+        } else {
+          return b.level - a.level;
+        }
+      });
 
-    await guildUsers.sort((a, b) => {
-      if (a.level === b.level) {
-        return b.xp - a.xp;
+      if (id == userId) {
+        data = await getData(interaction, null);
+        // currentRank = (await guildUsers?.findIndex((lvl) => lvl?._id === userId)) + 1;
+        targetUserObject = await interaction?.guild.members.fetch(userId);
       } else {
-        return b.level - a.level;
+        data = await getData(interaction, id);
+        // currentRank = (await guildUsers?.findIndex((lvl) => lvl?._id === id)) + 1;
+        targetUserObject = await interaction?.guild.members.fetch(id);
       }
-    });
 
-    console.log(guildUsers);
+      if (haveAMention) {
+        if (
+          (await guildUsers?.findIndex((lvl) => lvl?._id == mentionId)) == -1
+        ) {
+          if(mentionId == userId){
+            interaction?.reply(
+              `<@${userId}> **Calmaí!** você ainda não comentou no servidor. 🐀`
+            );
+            return;
+          }
+          interaction?.reply(
+            `<@${userId}> **Calmaí!** o usuário não está em meu registro 🐀`
+          );
+          return;
+        }
+      }
+      if (data?.userId == null) {
+        interaction?.reply(
+          `<@${userId}> **Peraí!** você ainda não comentou no servidor. 🐀`
+        );
+        return;
+      }
 
-    if (id == userId) {
-      data = await getData(interaction, null);
-      currentRank =
-        (await guildUsers.findIndex((lvl) => lvl._id === userId)) + 1;
-      targetUserObject = await interaction.guild.members.fetch(userId);
-    } else {
-      data = await getData(interaction, id);
-      currentRank = (await guildUsers.findIndex((lvl) => lvl._id === id)) + 1;
-      targetUserObject = await interaction.guild.members.fetch(id);
+      let status = await targetUserObject?.presence.status;
+      let color;
+      if (status === "dnd") {
+        color = "#FF335B";
+      }
+      if (status === "idle") {
+        color = "#ffb604";
+      }
+      if (status === "online") {
+        color = "#B8FF52";
+      }
+
+      let rank = new canvacord.Rank()
+        .setAvatar(targetUserObject?.user.displayAvatarURL({ size: 256 }))
+        .setRank(0, "Rank", false)
+        .setLevel(data?.level, "Nível", true)
+        .setCurrentXP(data?.xp)
+        .renderEmojis(true)
+        .setRequiredXP(calculateLevelXp(data?.level))
+        .setStatus(status, false, 5)
+        .setProgressBar(color, "COLOR")
+        .setUsername(targetUserObject?.user.username)
+        .setOverlay("#0C0C0C")
+        .setDiscriminator(targetUserObject?.user.discriminator)
+        .setBackground("COLOR", "#0C0C0C");
+
+      dataRank = await rank.build();
+      attachment = new AttachmentBuilder(dataRank);
     }
-
-    if (data.userId == null) return;
-
-    let rank = new canvacord.Rank()
-      .setAvatar(targetUserObject.user.displayAvatarURL({ size: 256 }))
-      .setRank(currentRank)
-      .setLevel(data?.level)
-      .setCurrentXP(data?.xp)
-      .setRequiredXP(calculateLevelXp(data?.level))
-      .setStatus("idle")
-      .setProgressBar("#ffb604", "COLOR")
-      .setUsername(targetUserObject.user.username)
-      .setOverlay("#0C0C0C")
-      .setDiscriminator(targetUserObject.user.discriminator)
-      .setBackground("COLOR", "#0C0C0C");
-
-    dataRank = await rank.build();
-    attachment = new AttachmentBuilder(dataRank);
-  }
+  }, 500);
 };

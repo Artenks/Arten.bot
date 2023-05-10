@@ -11,7 +11,7 @@ module.exports = async (interaction) => {
 
     for (var user of interaction.member.guild.members.cache) {
       user.map(async (userInfo) => {
-        if (userInfo.user == null) return;
+        if (userInfo?.user == null) return;
 
         getUser(userInfo.user.id, interaction).then(async () => {
           if (username != null) {
@@ -28,7 +28,7 @@ module.exports = async (interaction) => {
     }
 
     async function getUser(userId, interaction) {
-      await usersLevel.findOne({ _id: userId }).then(async (user) => {
+      await usersLevel?.findOne({ _id: userId }).then(async (user) => {
         username = user?.username;
         _id = user?._id;
         user?.Guild.map(async (guild) => {
